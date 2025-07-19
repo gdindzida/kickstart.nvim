@@ -95,6 +95,7 @@ return {
       ensure_installed = {
         -- Update this to ensure that you have the debuggers for the langs you want
         'delve',
+        'codelldb',
       },
     }
 
@@ -144,5 +145,30 @@ return {
         detached = vim.fn.has 'win32' == 0,
       },
     }
+
+    -- Add C/C++ adapter & configs
+    local mason_registry = require 'mason-registry'
+    local codelldb_pkg = mason_registry.get_package 'codelldb'
+    local extension_path = codelldb_pkg:get_install_path() .. '/extension/'
+    local codelldb_path = extension_path .. 'adapter/codelldb'
+    dap.adapters.codelldb = {
+      type = 'server',
+      port = '${port}',
+      executable = { command = codelldb_path, args = { '--port', '${port}' } },
+    }
+
+    dap.configurations.cpp = {
+      {
+        name = 'Launch (ask executable)',
+        type = 'codelldb',
+        request = 'launch',
+        program = function()
+          return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+      },
+    }
+
+    dap.configurations.c = dap.configurations.cpp
   end,
 }
